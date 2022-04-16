@@ -1,0 +1,70 @@
+library(tidyverse)
+library(hrbrthemes)
+library(ggthemes)
+library(lubridate)
+
+
+
+NPS_summary <- NPSdata %>%
+  count(Recommend)
+NPSdata<- as.data.frame(NPS_rental_car_example)
+
+ggplot(NPS_summary, aes(Recommend, n, fill=Recommend))+
+  geom_col() +
+  labs(x = "Rating", y = "Count of Ratings")
+
+
+
+pct_promoters <- sum(NPSp) * 100 / nrow(NPSdata)
+pct_detractors <- sum(mydatadet) * 100 / nrow(NPSdata)
+NPS_score <- pct_promoters - pct_detractors
+
+
+mydata$category <- if_else(NPSp==1, "Promoter", 
+                           if_else(mydatadet==1, "Detractor",
+                                   "Passive"))
+
+NPSdata$promoter <- ifelse(NPSdata$Recommend==9 | NPSdata$Recommend==10, 1, 0)
+NPSdata$detractor <- ifelse(NPSdata$Recommend<=6, 1,0)
+NPSdata$passives <- ifelse(NPSdata$Recommend==7 |NPSdata$Recommend==8, 1, 0)
+denom <- nrow(NPSdata)
+pct_promoters <- sum(NPSdata$promoter) * 100 / nrow(NPSdata)
+pct_detractors <- sum(NPSdata$detractor) * 100 / nrow(NPSdata)
+NPS_score <- pct_promoters - pct_detractors
+
+
+NPSdata$category <- if_else(NPSdata$promoter==1, "Promoter", 
+                           if_else(NPSdata$detractor==1, "Detractor",
+                                   "Passive"))
+
+ggtable <- NPSdata %>%
+  count(category, Recommend)
+hyphen_loc <- (str_locate(ggtable$Recommend," "))-1
+
+exp <- (hyphen_loc[,1])
+
+ggtable$Experience <- (str_sub(str_sub(ggtable$Recommend, 1, exp)))
+
+ggtable$CatXexp <- paste0(ggtable$category, " ", ggtable$Experience)
+ggplot(ggtable, aes(reorder(CatXexp,n), n, fill=category))+
+  geom_col() +
+  labs(x="NPS Category", y="Count") +
+  theme_calc()+
+  guides(fill=guide_legend(title="NPS Category"))
+
+
+hyphen_loc <- (str_locate(mydata$Q8," "))-1
+# create a vector of hypen locations
+exp <- (hyphen_loc[,1])
+mydata$Experience <- (str_sub(str_sub(mydata$Q8, 1, exp)))
+mydata$CatXexp <- paste0(mydata$category, " ", mydata$Experience)
+ggtable3 <- NPSdata %>%
+  group_by(`Date of Survey`)
+ggtable3 <- ggtable3 %>%
+  mutate(pct_promoters = sum(promoter) * 100 / length(NPSdata$`Date of Survey`)) %>%
+  mutate(pct_detrators = sum(detractor) * 100 / length(NPSdata$`Date of Survey`)) %>%
+  mutate(NPS_score = pct_promoters - pct_detractors)
+ggplot(ggtable3, aes(NPSdata$`Date of Survey`, NPS_score))+
+  geom_point()+
+  geom_line(aes(color="red"))+ 
+  labs(x="Date of Response", y="NPS Score")
