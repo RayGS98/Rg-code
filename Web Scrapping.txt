@@ -1,0 +1,122 @@
+
+
+library(rvest)
+library(utf8)
+library(eeptools)
+library(tidyverse)
+library(ggpubr)
+library(scales)
+
+webpage <- read_html("https://www.cia.gov/the-world-factbook/field/median-age/country-comparison")
+tbls <- html_nodes(webpage,"table")
+
+tbls_ls <- webpage %>%
+  html_nodes("table") %>%
+  .[1] %>%
+  html_table(fill = TRUE)
+Medage <- data.frame(tbls_ls)
+
+
+summary(Medage)
+colnames(Medage)[3] <- "Median Age"
+
+
+webpage <- read_html("https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison")
+tbls <- html_nodes(webpage,"table")
+# head(tbls)
+tbls_ls <- webpage %>%
+  html_nodes("table") %>%
+  .[1] %>%
+  html_table(fill = TRUE)
+Internetusers <- data.frame(tbls_ls)
+
+
+summary(Internetusers)
+colnames(Internetusers)[3] <- "Count of Internet Users"
+
+
+Internetusers$`Count of Internet Users` <- decomma(Internetusers$`Count of Internet Users`)
+
+scrapelinks <- function(url){
+  
+  webpage <- xml2::read_html(url)
+  
+  url_ <- webpage %>%
+    rvest::html_nodes("a") %>%
+    rvest::html_attr("href")
+  # Extract the link text
+  link_ <- webpage %>%
+    rvest::html_nodes("a") %>%
+    rvest::html_text()
+  return(tibble(link = link_, url = url_))
+}
+library(dplyr)
+Masterstable <- MasterSAtable %>% relocate(`Electricity - consumption`, .before = `Population growth rate`)
+
+url <- "https://www.cia.gov/the-world-factbook/references/guide-to-country-comparisons"
+webpagelinks <- scrapelinks(url)
+
+
+listoftables <- as.list(NULL)
+listoftablenames <- as.list(NULL)
+startURL <- "https://www.cia.gov"
+for(i in 9:24){
+  tableName <- webpagelinks$link[i]
+  linkName <- webpagelinks$url[i]
+  totalURL <- paste0(startURL, linkName)
+  webpage <- read_html(totalURL)
+  # print(totalURL)
+  tbls <- html_nodes(webpage,"table")
+  tbls_ls <- webpage %>%
+    html_nodes("table") %>%
+    .[1] %>%
+    html_table(fill = TRUE)
+  listoftables[[i]] <- data.frame(tbls_ls)
+  listoftablenames[[i]] <- webpagelinks$link[i] 
+}
+
+
+Country <- c("Spain", "France", "Germany", "Austria", "Bosnia",
+                        "Portugal", "Italy", "Ireland", "United Kingdom", "Ukraine",
+                        "Croatia", "Netherlands", "Latvia",
+                        "Lithuania", "Slovenia","Hungary","Finland","Sweden ","Norway","Estonia","Denmark","Belarus")
+
+
+MasterSAtable <- as.data.frame(Country)
+
+
+names(Medage)[2] <- "Country"
+names(MasterSAtable)[3] <- "Median Age"
+ 
+
+MasterSAtable <- left_join(MasterSAtable, Medage, by = "Country")
+MasterSAtable <- as.data.frame(Country)
+for(i in 9:77){
+  rightDF <- listoftables[[i]][,c(2:3)]
+  MasterSAtable <- left_join(MasterSAtable, rightDF, by = "Country")
+}
+
+
+VarColName <- unlist(listoftablenames)
+colheadcount <- length(VarColName)
+for(i in 1:colheadcount){
+  colnames(MasterSAtable)[i+1] <- VarColName[i]
+}
+colnames(MasterSAtable)
+colnames(MasterSAtable) <- make.unique(names(MasterSAtable))
+write.csv(MasterSAtable, "MasterSAtable.csv")
+
+MasterAtableN <- na.omit(MasterSAtable)
+MasterSAtables$`Electricity - consumption` <- decomma(MasterSAtable$`Electricity - consumption`)
+options(scipen=999)
+theme_set(theme_pubr())
+ggdotchart(
+  MasterSAtable, x="Country", y="Electricity - consumption",
+  color="Country", size = 3,
+  add = "segment",
+  add.params = list(size = 2),
+  rotate = TRUE,
+  sorting = c("descending"),
+  palate = "jco",
+  ggtheme = theme_pubclean()
+)
