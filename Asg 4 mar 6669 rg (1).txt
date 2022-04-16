@@ -1,0 +1,84 @@
+
+
+library(rvest)
+library(utf8)
+library(eeptools)
+library(tidyverse)
+library(ggpubr)
+library(scales)
+
+loughran_sent <- data_frame(get_sentiments("loughran"))
+
+loughran_2 <- loughran_sent %>%
+  filter(sentiment=="negative" | sentiment=="positive")
+text <- Comment2$commentBody
+text_df <- data_frame(text)
+tidy_orig <- text_df
+text_df$commentNum <- seq(1:length(text))
+text_df <- text_df %>%
+  group_by(commentNum) %>%
+  unnest_tokens(word, text)
+mystopwords <- stop_words
+tidy_orig <- tidy_orig %>%
+  unnest_tokens(word,text)
+
+
+tidy_orig %>%
+  inner_join(loughran_sent) %>%
+  count(word, sort = TRUE) %>%
+  top_n(10)
+
+tidy_orig %>%
+  inner_join(loughran_sent) %>%
+  count(word, sort = TRUE) %>%
+  top_n(10) %>%
+  ggplot(aes(reorder(word,n),n))+
+  geom_bar(stat = "identity")+
+  coord_flip() +
+  labs(x = "Count of Words", y = "Word")
+
+newtab <- tidy_orig %>%
+  inner_join(loughran_sent) %>%
+  count(word, sort = TRUE) %>%
+  top_n(n=10)
+
+
+newtab <- newtab %>%
+  left_join(loughran_sent)
+
+ggplot(newtab, aes(reorder(word,n),n, fill=sentiment))+
+  geom_bar(stat = "identity")+
+  coord_flip() +
+  labs(x = "word", y = "count of words")
+Comment_table <- Comment2$commentBody
+Comment_table <- data_frame(text)
+Comment_table$commentNum <- seq(1:length(text))
+Loughran_result <- text_df %>%
+  anti_join(mystopwords) %>%
+  left_join(loughran_2) %>%
+  count(sentiment) %>%
+  spread(sentiment, n, fill=0) %>%
+  mutate(sentiment = positive - negative)
+
+Comment_table$afinn_score <- cbind(afinn_result$`sum(value)`)
+
+
+# visualizations
+ggplot(Comment_table, aes(commentNum, Loughran_result))+
+  geom_line()+
+  geom_point()+
+  labs(x="Comment Number", y=" Sentiment Score of Comment")
+
+loughran_word_counts <- tidy_orig %>%
+  inner_join(loughran_sent) %>%
+  count(word, sentiment, sort=TRUE)
+
+loughran_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill=sentiment))+
+  geom_col(show.legend = FALSE)+
+  facet_wrap(~sentiment, scales = "free_y")+
+  labs(x = "Contribution to sentiment", y = "Important Words")
