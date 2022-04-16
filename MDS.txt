@@ -1,0 +1,69 @@
+getwd()
+options(scipen = 999)
+
+# set up libraries for MDS
+library(tidyverse)
+library(MASS)
+library(vegan)
+library(magrittr)
+library(ggpubr)
+library(ggsci)
+library(ecodist)
+library(smacof)
+library(scales)
+library(psych)
+library(psychTools)
+library(maps)
+remove(NMDS_mod1)
+remove(mydata_NMDS1)
+# move the University name to the row name and then delete the column to create a matrix
+rownames(Stream) <- Stream$`Streaming Platform`
+mydata_NMDS <- Stream[,-1]
+
+# Kruskal’s non-metric multidimensional scaling
+# https://www.rdocumentation.org/packages/MASS/versions/7.3-56/topics/isoMDS
+NMDS_mod1 <- mydata_NMDS %>%
+  dist() %>%
+  isoMDS() %>%
+  .$points %>%
+  as_tibble()
+
+# plot the NMDS plot that shows how UF compares with the other BA Centers
+colnames(NMDS_mod1) <- c("Dim 1", "Dim 2")
+ggscatter(NMDS_mod1, x = "Dim 1", y = "Dim 2", 
+          label = rownames(mydata_NMDS),
+          size = 1,
+          repel = TRUE)
+
+
+# Are there clusters? Let's try K means clusters
+clust <- kmeans(NMDS_mod1, 3)$cluster %>%
+  as.factor()
+
+# add the clusters to the mds_model_std tibble
+NMDS_mod1 <- NMDS_mod1 %>%
+  mutate(groups = clust)
+
+# plot the non-metric MDS plot
+ggscatter(NMDS_mod1, x = "Dim 1", y = "Dim 2",
+          label = rownames(mydata_NMDS),
+          color="groups",
+          palette = "uniform",
+          size = 1,
+          ellispe = TRUE,
+          ellipse.type = "convex",
+          ellispe.alpha = 0.6,
+          repel = TRUE)
+
+# create a visual with ggplot vice ggpubr
+NMDS_mod1 <- as.data.frame(NMDS_mod1)
+rownames(NMDS_mod1) <- rownames(mydata_NMDS)
+ggplot(NMDS_mod1, aes(`Dim 1`, `Dim 2`, label=(rownames(NMDS_mod1)), color=groups))+
+  geom_point() + 
+  labs(col="1-Disney+ 2-Netflix
+3-HBO MAX 4-Paramount+
+5-Hulu 6-Amazon 7-Apple TV+ + 8-Peacock")+
+  geom_text(check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.25, size = 4)
+
+
+
