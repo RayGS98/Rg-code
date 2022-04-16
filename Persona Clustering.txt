@@ -1,0 +1,189 @@
+library(tidyverse)
+library(factoextra)
+library(NbClust)
+library(cluster)
+library(rpart)
+library(rpart.plot)
+library(mlbench)
+library(caret)
+library(pROC)
+library(tree)
+
+
+##################
+# Customer persona exercise
+##################
+# download kaggle dataset
+# overall site - https://www.kaggle.com/shwetabh123/mall-customers
+
+# read the file into a data frame
+mydata <- read.csv("https://raw.githubusercontent.com/2blam/ML/master/k_means_clustering/Mall_Customers.csv")
+
+# fix the column header names
+colnames(mydata)[1:5] <- c("CustomerID", "Gender", "Age", "Annual_Income","Spending_Score")
+
+# convert gender into a factor
+mydata$Gender <- as.factor(mydata$Gender)
+
+# how do you determine the number of clusters?
+# https://www.datanovia.com/en/lessons/determining-the-optimal-number-of-clusters-3-must-know-methods/
+
+# this scales the numeric variables
+mydata_scaled <- as.data.frame(scale((mydata)[,c(3:5)]))
+colnames(mydata_scaled)[1:3] <- c("Age_S", "Annual_Income_S","Spending_Score_S")
+mydata_combined  <- cbind(mydata, mydata_scaled)
+
+# optimal number of clusters using the Elbow method
+fviz_nbclust(mydata_combined[,c(6:8)], FUNcluster = kmeans, method = "wss")+
+  geom_vline(xintercept = 4, linetype = 2) +
+  labs(subtitle = "Elbow method")
+
+# optimal number of clusters using the Silhouette method
+fviz_nbclust(mydata_combined[,c(6:8)], FUNcluster = kmeans, 
+             method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+
+# optimal number of clusters using the Gap Statistic method
+set.seed(365)
+fviz_nbclust(mydata_combined[,c(6:8)], nstart = 25, 
+             FUNcluster = kmeans, 
+             method = "gap_stat")+
+  labs(subtitle = "Gap statistic method")
+
+# an "optimized" way to determine clusters
+NbClust(data = (mydata_combined[,c(6:8)]), diss = NULL, distance = "euclidean",
+        min.nc = 2, max.nc = 10, method = "kmeans")
+
+
+# reference 
+# https://uc-r.github.io/kmeans_clustering
+distance <- get_dist((mydata_combined)[,c(6:8)])
+
+set.seed(365)
+k4 <- kmeans(((mydata_combined)[,c(6:8)]), centers = 4, nstart=25)
+mydata_combined$k4 <- k4$cluster
+
+print(k4)
+
+# visualize the clusters with a standard visualization
+fviz_cluster(k4, data = mydata_combined[,6:8])
+
+
+# Code for further visualizations
+vistab <- as.data.frame(mydata_combined) %>%
+  mutate(cluster=k4,
+         ID=CustomerID)
+
+
+# create a function to claulate the mean value for the visualizations
+meanFunction <- function(x){
+  return(data.frame(y=round(mean(x),1),
+                    label=round(mean(x,na.rm=T),1)))
+}
+
+
+# plot the data against the clusters
+
+# this is the age distribution by cluster 
+ggplot(vistab, aes(factor(cluster), Age))+
+  geom_boxplot(varwidth = TRUE)+
+  stat_summary(fun=mean, geom="point", shape=18, size=3, color="red", fill="red")+
+  stat_summary(fun.data = meanFunction, geom="text", size=3, vjust=-1.2)+
+  labs(x = "Cluster Number", title="Age by Cluster")
+
+# this is the Annual income distribution by cluster
+ggplot(vistab, aes(factor(cluster), Annual_Income))+
+  geom_boxplot(varwidth = TRUE)+
+  stat_summary(fun=mean, geom="point", shape=18, size=3, color="red", fill="red")+
+  stat_summary(fun.data = meanFunction, geom="text", size=3, vjust=-1.2)+
+  labs(x = "Cluster Number", y="Annual Income", title="Income by Cluster")
+
+# this is the Spending Score by Cluster
+ggplot(vistab, aes(factor(cluster), Spending_Score))+
+  geom_boxplot(varwidth = TRUE)+
+  stat_summary(fun=mean, geom="point", shape=18, size=3, color="red", fill="red")+
+  stat_summary(fun.data = meanFunction, geom="text", size=3, vjust=-1.2)+
+  labs(x = "Cluster Number", y="Spending Score", title="Spending by Cluster")
+
+# another way to view the variables is by facet wrapping the histograms
+# Annual income by cluster
+ggplot(vistab, aes(Annual_Income))+
+  geom_histogram(color="white", bins = 15)+
+  facet_wrap(~cluster, ncol=1)+   # ncol is the way to control the wrapping
+  labs(x="Annual Income",y ="Count per cluster")
+
+# Age facet wrapped by cluster  
+ggplot(vistab, aes(Age))+
+  geom_histogram(color="white", bins = 15)+
+  facet_wrap(~cluster, ncol=1)+
+  labs(x="Age",y ="Count per cluster")
+
+# Spending score wrapped by cluster
+ggplot(vistab, aes(Spending_Score))+
+  geom_histogram(color="white", bins = 15)+
+  facet_wrap(~cluster, ncol=1)+
+  labs(x="Spending Score",y ="Count per cluster")
+
+
+
+# colors visualization of individual observations by number
+ggplot(vistab, aes(Age, Spending_Score))+
+  geom_text(label=rownames(vistab), color=factor(k4$cluster))
+
+as_tibble(mydata_combined) %>%
+  mutate(cluster = k4,
+         ID = CustomerID) %>%
+  ggplot(aes(Age, Annual_Income))+
+  geom_text(label=rownames(vistab), color=factor(k4$cluster))
+
+# Create a new binary factor variable for cluster 4 or not
+mydata_combined$cluster4 <- ifelse(mydata_combined$k4 == 4, "Yes", "No")
+mydata_combined$cluster4 <- factor(mydata_combined$cluster4,
+                                   levels = c("Yes","No"))
+str(mydata_combined$cluster4)
+
+# split the data
+# https://www.statology.org/how-to-generate-a-sample-using-the-sample-function-in-r/
+set.seed(365)
+ind <- sample(mydata_combined$CustomerID,150, replace = FALSE, prob = NULL)
+train <- mydata_combined[ind,]
+test <- mydata_combined[-ind,]
+
+# build a decision tree model
+dtree_model <- rpart(cluster4 ~ Age + Annual_Income + Spending_Score, data = train)
+dtree_model
+
+# examine the tree rules
+rpart.plot(dtree_model)
+
+# examine the hyperparameter CP
+printcp(dtree_model)
+
+# examine the confusion matrix
+p <- predict(dtree_model, train, type = "class")
+confusionMatrix(p, train$cluster4, positive="Yes")
+
+# adjusting the model complexity
+dtree_model2 <- rpart(cluster4 ~ Age + Annual_Income + Spending_Score, data = train,
+                      maxdepth = 4, minsplit=2,
+                      minbucket=1)
+dtree_model2
+printcp(dtree_model2)
+rpart.plot(dtree_model2)
+p2 <- predict(dtree_model2, train, type = "class")
+confusionMatrix(p2, train$cluster4, positive = "Yes")
+
+# apply the more complex model to the test data (not used to build the model)
+p3 <- predict(dtree_model2, test, type = "class")
+confusionMatrix(p3, test$cluster4, positive="Yes")
+
+# now apply this to new people entering the database
+CustomerID <- c(201,202,203)
+Age <- c(54,39, 21)
+Annual_Income <- c(45, 82, 66)
+Spending_Score <- c(63, 70, 35)
+New_Customers <- data.frame(CustomerID, Age, Annual_Income, Spending_Score)
+
+p4 <- predict(dtree_model2, New_Customers, type="class")
+p4
+New_Customers$cluster4 <- p4
