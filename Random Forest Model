@@ -1,0 +1,24 @@
+install.packages("randomForest")
+
+# Load the required packages
+library(randomForest)
+library(caret)
+
+# Load the Heart Disease dataset
+data <- Heart_Disease
+
+# Split the data into training and testing sets
+set.seed(123)
+trainIndex <- createDataPartition(data$male, p = 0.8, list = FALSE)
+train <- data[trainIndex, ]
+test <- data[-trainIndex, ]
+
+# Build the random forest model
+set.seed(123)
+rf_model <- randomForest(male ~ ., data = train, ntree = 500, mtry = 3)
+
+# Make predictions on the testing set
+predictions <- predict(rf_model, newdata = test)
+
+# Evaluate the model
+confusionMatrix(predictions, test$prevalentHyp)
