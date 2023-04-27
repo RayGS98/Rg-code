@@ -1,0 +1,25 @@
+# Load the USArrests dataset
+data("USArrests")
+library(caret)
+# Split the dataset into train and test sets
+set.seed(123)
+indices <- sample(1:nrow(USArrests), round(0.7 * nrow(USArrests)))
+train_data <- USArrests[indices, ]
+test_data <- USArrests[-indices, ]
+
+# Fit a linear regression model to predict Rape
+model <- lm(Rape ~ ., data = train_data)
+model
+summary(model)
+
+# Predict Rape on the test data
+predictions <- predict(model, newdata = test_data)
+predictions
+# Calculate the mean squared error of the predictions
+mse <- mean((predictions - test_data$Rape)^2)
+
+# Calculate the root mean squared error of the predictions
+rmse <- sqrt(mse)
+
+# Print the root mean squared error
+print(rmse)
