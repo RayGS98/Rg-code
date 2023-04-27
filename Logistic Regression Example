@@ -1,0 +1,29 @@
+# Load the heart disease dataset
+data <- read.csv("heart_disease_dataset.csv")
+
+# View the dataset
+head(data)
+
+# Convert the target variable to a factor
+data$target <- as.factor(data$target)
+
+# Split the data into training and testing sets
+library(caTools)
+set.seed(123)
+split <- sample.split(data$target, SplitRatio = 0.7)
+train <- subset(data, split == TRUE)
+test <- subset(data, split == FALSE)
+
+# Build the logistic regression model
+model <- glm(target ~ age + sex + cp + trestbps + chol + fbs + restecg + thalach + exang + oldpeak + slope + ca + thal, data = train, family = binomial)
+
+# View the model summary
+summary(model)
+
+# Make predictions on the test set
+predictions <- predict(model, newdata = test, type = "response")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+
+# Calculate accuracy of the model
+library(caret)
+confusionMatrix(factor(predicted_classes), test$target)
