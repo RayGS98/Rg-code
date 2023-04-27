@@ -1,0 +1,78 @@
+library(xgboost)
+library(caret)
+
+# Load the dataset
+data(heart)
+
+# Split data into training and testing sets
+set.seed(123)
+trainIndex <- createDataPartition(heart$AHD, p = .8, list = FALSE)
+train <- heart[trainIndex, ]
+test <- heart[-trainIndex, ]
+
+# Set up the XGBoost model
+xgb <- xgboost(data = as.matrix(train[, -10]), label = as.numeric(train$AHD == "Yes"),
+               nrounds = 1000, early_stopping_rounds = 10,
+               objective = "binary:logistic",
+               eval_metric = "auc",
+               eta = 0.01,
+               max_depth = 4,
+               subsample = 0.8,
+               colsample_bytree = 0.8)
+
+# Make predictions on the test set
+predictions <- predict(xgb, as.matrix(test[, -10]))
+
+# Evaluate the model's performance using AUC-ROC
+roc <- caret::roc(test$AHD, predictions)
+print(paste("AUC-ROC:", round(auc(roc), 3)))
+
+Neural Network
+
+# Load the dataset
+data(heart, package = "ISLR")
+
+# Split data into training and testing sets
+set.seed(123)
+train_index <- sample(1:nrow(heart), size = 0.7*nrow(heart), replace = FALSE)
+train_data <- heart[train_index, ]
+test_data <- heart[-train_index, ]
+
+# Scale the data
+train_data_scaled <- scale(train_data[, -14])
+test_data_scaled <- scale(test_data[, -14])
+
+# Create the target variable matrix
+train_target <- as.matrix(train_data[, 14])
+test_target <- as.matrix(test_data[, 14])
+
+# Define the neural network architecture
+library(neuralnet)
+nn <- neuralnet(formula = target ~ age + sex + cp + trestbps + chol + fbs + restecg + thalach + exang + oldpeak + slope + ca + thal, data = train_data_scaled, hidden = c(5, 2), linear.output = TRUE)
+
+# Make predictions on the test set
+predictions <- compute(nn, test_data_scaled)
+
+# Calculate the mean squared error
+mse <- mean((test_target - predictions$net.result)^2)
+mse
+
+
+Deciscion Tree
+
+# Load the heart dataset
+data(heart)
+
+# Split the dataset into training and testing sets
+set.seed(123)
+train_index <- sample(nrow(heart), 0.7*nrow(heart))
+train_data <- heart[train_index,]
+test_data <- heart[-train_index,]
+
+# Build a decision tree model using the rpart package
+library(rpart)
+heart_tree <- rpart(target ~ ., data = train_data, method = "class")
+
+# Visualize the decision tree
+library(rpart.plot)
+rpart.plot(heart_tree)
