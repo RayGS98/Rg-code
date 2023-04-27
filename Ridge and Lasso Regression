@@ -1,0 +1,60 @@
+# Load the required packages
+library(glmnet)
+
+# Load the AUTO dataset
+data(AUTO)
+
+# Prepare the data
+X <- model.matrix(mpg ~ ., data = AUTO)[,-1]
+y <- AUTO$mpg
+
+# Split the data into training and testing sets
+set.seed(123)
+train_idx <- sample(nrow(X), round(0.7 * nrow(X)))
+X_train <- X[train_idx,]
+y_train <- y[train_idx]
+X_test <- X[-train_idx,]
+y_test <- y[-train_idx]
+
+# Perform cross-validation to choose the optimal lambda value
+cv <- cv.glmnet(X_train, y_train, alpha = 0, standardize = TRUE)
+plot(cv)
+
+# Choose the optimal lambda value
+lambda_opt <- cv$lambda.min
+
+# Train the ridge regression model using the optimal lambda value
+ridge_model <- glmnet(X_train, y_train, alpha = 0, lambda = lambda_opt, standardize = TRUE)
+
+# Predict on the test set
+y_pred <- predict(ridge_model, newx = X_test)
+
+# Calculate the root mean squared error (RMSE)
+rmse <- sqrt(mean((y_test - y_pred)^2))
+cat("RMSE:", rmse)
+
+
+LASSO Regression
+
+# Load the Auto dataset
+data(Auto)
+
+# Split the data into training and test sets
+set.seed(123)
+trainIndex <- sample(1:nrow(Auto), round(0.7 * nrow(Auto)))
+trainData <- Auto[trainIndex, ]
+testData <- Auto[-trainIndex, ]
+
+# Fit a Lasso Regression model using the glmnet package
+library(glmnet)
+x <- model.matrix(mpg ~ ., data = trainData)[,-1]
+y <- trainData$mpg
+fit <- glmnet(x, y, alpha = 1, lambda = 0.1)
+
+# Make predictions on the test set
+xTest <- model.matrix(mpg ~ ., data = testData)[,-1]
+yPred <- predict(fit, newx = xTest)
+
+# Calculate the mean squared error on the test set
+mse <- mean((testData$mpg - yPred)^2)
+mse
