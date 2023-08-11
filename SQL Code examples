@@ -1,0 +1,216 @@
+# Show me the company name and their revenue
+Select Company, Revenue
+FROM fooddata;
+
+# Show me the companies' revenue from least to highest
+Select Company, Revenue
+FROM fooddata
+ORDER BY Revenue ASC;
+
+#Show me the companies' revenue from Largest to smallest
+Select Company, Revenue
+FROM fooddata
+ORDER BY Revenue DESC;
+
+SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+
+#Show me the category and their average revenue and grouped by their category.
+Select Category, Revenue
+FROM fooddata
+Group BY Category;
+
+#Show me the categories, average profit grouoed by the categories and ordered by the average profit from largest to smallest.
+Select category,
+AVG(profit) as AVGProfit
+FROM fooddata
+Group BY category
+Order by AVGProfit DESC;
+
+# Can I see the top 5 companies' profit grouped by the company name and ordered from largest to smallest. 
+Select Company, profit
+FROM fooddata
+Group BY Company
+Order by profit DESC
+LIMIT 5;
+
+#Show me the company, profit percentage grouoed by the 
+Select Company, MAX(profitpercentage) as Max_profit_percentage
+FROM fooddata
+Group BY Company
+Order by max_profir_percentage DESC
+Limit 100;
+
+#SHow the categories and their minimun profit percentage grouped by category where the 
+average profit percentage is higher than 30 and less than 100. ordered by the minumim profit percentage from largest to smallest
+Select category, min(profitpercentage)
+FROM fooddata
+group by category
+HAVING AVG(profitpercentage>30 AND profitpercentage<100)
+Order by min(profitpercentage) DESC;
+
+#Show the company and the profit percentage grouped by company where the avergage profit 
+percentage is over 30 and less than 100 ordered by the profit percentage from largest to smallest
+Select Company, profitpercentage
+FROM fooddata
+group by company
+HAVING AVG(profitpercentage>30 AND profitpercentage<100)
+Order by profitpercentage DESC;
+
+#Show the company and profit percentage grouped by company and ordered by the profit percentage from largest to smallest
+Select Company, profitpercentage
+FROM fooddata
+group by company
+Order by profitpercentage DESC;
+
+#Give me the companies' profit percentage where the company name ends with "gen"
+Select Company, profitpercentage
+FROM fooddata
+WHERE company LIKE "%gen";
+
+#Give me the company and profit percentage where the total profit is over 20000
+Select Company, profitpercentage
+FROM fooddata
+WHERE SUM (profit)>20000;
+
+# Show the company revenue for the food companies where the revenue is over 50000 
+Select Company, Revenue
+FROM fooddata
+WHERE Revenue >50000 AND category = "food";
+
+# Give me the company revenue where the profit is between 10000-20000
+Select Company, Revenue
+FROM fooddata
+WHERE profit BETWEEN 10000 AND 20000;
+
+# Show me everything from the foof data set where the profit was between 10000-20000 and the revenue does not include 999
+SELECT * FROM fooddata
+WHERE profit BETWEEN 10000 AND 20000
+AND Revenue NOT IN (999);
+
+#SHow me the company revenue. If the revenue is greater than 40000 then write "MORE", if not, write "LESS"
+SELECT Company, Revenue, IF(Revenue>40000, "MORE", "LESS")
+FROM fooddata;
+
+#SHow me an example of a subquery. Here the select statement in parenthesis is select first then the outer 
+query will query off the 1st select statement inparenthesis.
+SELECT MARKETING_TACTIC, Company
+FROM fooddata
+where MARKETING_TACTIC in (
+	Select MARKETING_TACTIC 
+	From MARKETING_KPI
+	where SOCIAL_MEDIA_COST > 30000);
+    
+# Example of CASE statement. If the profit is over 5000, write "RICH" if not write poor.
+SELECT CASE
+WHEN profit > 5000 THEN 'RICH'
+ELSE 'poor'
+END
+FROM fooddata;
+
+# Another example of CASE statement with a join. Show the company revenue, profit and category. 
+When the category is food then the advertisement is added by the fee times 3.5, etc
+SELECT Company, Revenue, profit, category,
+CASE
+    WHEN category = 'food' THEN ADVERTISEMENT + (FEE * 3.5)
+    WHEN category = 'Beverages' THEN ADVERTISEMENT + (FEE * 4.5)
+    WHEN category = 'Household & personal products' THEN ADVERTISEMENT + (FEE * 3.5)
+    ELSE ADVERTISEMENT + (FEE * 2.0)
+    END
+    FROM MARKETING.dbo.MARKETING_KPI
+    JOIN Foodproject.dbo.fooddata;
+
+#Show me the company profit grouped by company where the max profit was greater than 7000 and order it by max profit from largest to smallest
+Select Company, MAX(profit)
+FROM fooddata
+GROUP BY company
+HAVING MAX(profit) > 7000
+ORDER BY MAX(profit) DESC
+
+# Update the food dataset and put the profit as 12345 where the revenue was 999
+UPDATE fooddata
+SET profit = 12345
+WHERE Revenue = 999
+
+#Remove the company clorox from the dataset
+DELETE FROM fooddata
+WHERE Category = 'Clorox'
+
+# Give me the job position and average salary for a data analyst by combing two tables
+SELECT Job_Position, AVG(Salary)
+FROM JOBposting.Job_Info
+Inner Join JobData
+     ON Job_Info.Posting_ID=JobData.Posting_ID
+WHERE Job_Position= "Data Analyst"
+
+# Can you combine the unique output of the sales and Marketing KPI tables
+Select * FROM Sales.fooddata
+UNION
+Select * FROM MKG.Marketing_KPI
+
+#Please the combine the results of the two tables food data and marketing KPIs.
+Select * FROM Sales.fooddata
+UNION ALL
+Select * FROM Sales.Marketing_KPI
+
+# Combine the company name with a comma and the category and call it company_category
+Select CONCAT(Company,',',category) AS Company_Category
+From fooddata
+
+# Make all the company names in capital latters
+Select UPPER(Company)
+FROM fooddata;
+
+#Show me the characters in the Revenue column
+Select Revenue, LEN(Revenue)
+FROM fooddata;
+
+#Show me all columns and with the max profit for all the categories
+SELECT *,
+MAX(profit) over(partition by Category) as max_profit
+FROM fooddata;
+
+##Show me all columns.Also, Give me the row number for each grouped by the category and ordered by the profit
+SELECT *,
+row_number() over(partition by category order by profit) as max_profit
+FROM fooddata;
+
+#Give me the rank for each for category ordered by the company in descending order
+SELECT *,
+Rank() over(partition by category order by Company desc) as The_rank
+FROM fooddata;
+
+#Give me the rank for each for category ordered by the company in descending order. But this time don't skip ranks
+SELECT *,
+dense_rank() over(partition by category order by Company desc) as The_rank
+FROM fooddata;
+
+# Show me the city with the previous price for each 
+order ID. Order this by orderID
+SELECT city,
+LAG(Price) OVER(ORDER BY Order_ID) as previous
+FROM salesprod;
+
+# Show me the company with the Next price for each 
+company ordered by company name and call it "previous_revenue"
+SELECT city,
+LEAD(Price) OVER(ORDER BY Order_ID) as previous
+FROM salesprod;
+
+SELECT
+  Company,
+  Revenue,
+  LAG(Revenue) OVER (
+  ORDER BY Revenue) - Revenue AS LED
+FROM fooddata
+ORDER BY Revenue;
+
+
+SELECT
+Revenue, Company,Category,
+first_value(Revenue) OVER (partition by Category ORDER BY Revenue) AS NEWW
+FROM fooddata;
+
+SELECT
+Revenue, Company,Category,
+last_value(Revenue) OVER (partition by Category ORDER BY Revenue ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS NEWW
+FROM fooddata;
