@@ -196,20 +196,13 @@ SELECT city,
 LEAD(Price) OVER(ORDER BY Order_ID) as previous
 FROM salesprod;
 
-SELECT
-  Company,
-  Revenue,
-  LAG(Revenue) OVER (
-  ORDER BY Revenue) - Revenue AS LED
-FROM fooddata
-ORDER BY Revenue;
-
-
+#Give me the first value for revenue for each category and order it by revenue
 SELECT
 Revenue, Company,Category,
 first_value(Revenue) OVER (partition by Category ORDER BY Revenue) AS NEWW
 FROM fooddata;
 
+#Give me the last value for revenue for each category and order it by revenue
 SELECT
 Revenue, Company,Category,
 last_value(Revenue) OVER (partition by Category ORDER BY Revenue ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS NEWW
