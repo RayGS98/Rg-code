@@ -16,19 +16,18 @@ library(psychTools)
 library(maps)
 remove(NMDS_mod1)
 remove(mydata_NMDS1)
-# move the University name to the row name and then delete the column to create a matrix
+# moved the Platform name to the row name and then delete the column to create a matrix
 rownames(Stream) <- Stream$`Streaming Platform`
 mydata_NMDS <- Stream[,-1]
 
 # Kruskal’s non-metric multidimensional scaling
-# https://www.rdocumentation.org/packages/MASS/versions/7.3-56/topics/isoMDS
 NMDS_mod1 <- mydata_NMDS %>%
   dist() %>%
   isoMDS() %>%
   .$points %>%
   as_tibble()
 
-# plot the NMDS plot that shows how UF compares with the other BA Centers
+# ploted the NMDS plot that shows how UF compares with the other BA Centers
 colnames(NMDS_mod1) <- c("Dim 1", "Dim 2")
 ggscatter(NMDS_mod1, x = "Dim 1", y = "Dim 2", 
           label = rownames(mydata_NMDS),
@@ -36,11 +35,11 @@ ggscatter(NMDS_mod1, x = "Dim 1", y = "Dim 2",
           repel = TRUE)
 
 
-# Are there clusters? Let's try K means clusters
+# Looking for clusters. Attempt K means clusters
 clust <- kmeans(NMDS_mod1, 3)$cluster %>%
   as.factor()
 
-# add the clusters to the mds_model_std tibble
+# added the clusters to the mds_model_std tibble
 NMDS_mod1 <- NMDS_mod1 %>%
   mutate(groups = clust)
 
@@ -55,7 +54,7 @@ ggscatter(NMDS_mod1, x = "Dim 1", y = "Dim 2",
           ellispe.alpha = 0.6,
           repel = TRUE)
 
-# create a visual with ggplot vice ggpubr
+# created a visual with ggplot vice ggpubr
 NMDS_mod1 <- as.data.frame(NMDS_mod1)
 rownames(NMDS_mod1) <- rownames(mydata_NMDS)
 ggplot(NMDS_mod1, aes(`Dim 1`, `Dim 2`, label=(rownames(NMDS_mod1)), color=groups))+
