@@ -207,3 +207,16 @@ SELECT
 Revenue, Company,Category,
 last_value(Revenue) OVER (partition by Category ORDER BY Revenue ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS NEWW
 FROM fooddata;
+
+#How this can answer business problems or help a business out.
+Example: Line 22. I used SQL to calculate the average profit for the categories. This specific metric is 
+essential because it helps a potential disruptor know which categories they may or may not want to enter
+
+#Next I utilized SQL to implement clustering algorithms that group companies based on their revenue and profit percentage. This helps us understand which specific companies are doing better than other. So for example, if we were to consider an acquisition, we would know how much to spend and 
+which companies to spend on based on their revenue and the precentage that they profit
+
+#Furthermore, I createdSQL queries to generate visualizations such as bar charts and pie charts, to illustrate the 
+distribution of companies correspponding contributions to their respective category
+
+#Finally, I presented the findings in a comprehensive report using Tableau, highliting the characteristics of each company and providing actionable recomendations for each company and category for acquisition. Byleverging SQL to perform company segmentation, the future disruptor gained valuable insights into the companies, 
+their profit, and their revenue, enabling them to tailor their acquisition efforts to companies an the come up and companies to avoid for acquisition.
