@@ -1,0 +1,63 @@
+#Show me the address where the sale price was over 400,000 and had over 4 beds
+SELECT PropertyAddress FROM housing.nashvillehousing
+WHERE SalePrice > 400000 AND Bedrooms < 4;
+
+#Can you list the average sale price and average acreage where the sale price was over 500,000
+SELECT AVG(SalePrice) AS AvgSalePrice, AVG(Acreage) AS AvgAcreage
+FROM housing.nashvillehousing
+WHERE SalePrice > 500000 
+GROUP BY PropertyAddress;
+
+#List the Sale price and year for newer homes, 2010
+SELECT AVG(SalePrice) as Average_SalePrice, YearBuilt FROM housing.nashvillehousing
+WHERE YearBuilt > 2010
+Group BY YearBuilt
+Order BY YearBuilt;
+
+#SHow the average sale price and beds where the price was over 400,000
+SELECT AVG(SalePrice) AS AvgSalePrice, AVG(Bedrooms) AS AvgBeds
+FROM housing.nashvillehousing
+WHERE SalePrice > 400000
+GROUP BY PropertyAddress
+Order BY AVgBeds DESC;
+
+#List the average sale price based on acreage
+SELECT Acreage, AVG(SalePrice) AS AvgSalePrice
+FROM housing.nashvillehousing
+GROUP BY Acreage;
+
+#List the average sale price based on bath type
+SELECT FullBath, HalfBath, AVG(SalePrice) AS AvgSalePrice
+FROM housing.nashvillehousing
+GROUP BY FullBath, HalfBath;
+
+#What are the homes that have sale price over total value
+SELECT propertyaddress, SaleDate FROM housing.nashvillehousing
+WHERE SalePrice > TotalValue;
+
+#WHat are the homes that had a sale price  below the total value
+SELECT propertyaddress, SaleDate FROM housing.nashvillehousing
+WHERE SalePrice < TotalValue;
+
+##WHat is the average difference between the sale price and the total value
+SELECT AVG(SalePrice - TotalValue) AS AvgPriceDifference
+FROM housing.nashvillehousing;
+
+#How this can answer business problems or help a business out.
+Example I used SQL to find which homes sold for over 400,000 and had over 4 beds. This could help a real 
+estate company find homes that are selling well and have a high amount of beds so they can charge more.
+
+#Next I utlized SQL to find the prices of newer homes (2010-present)
+This helps a company better understand what the market is for new homes in Nashville. So they know what to expect when purchasing newer homes in the area
+
+#I then was able to look for sale prices based on the Full baths and the acreage. This helps a company better understand what to 
+expect in terms of sales based on metrics such as Full baths or acreage. For example homes with 2 full baths and 1 half bath, had an average sale price of $232,841.
+
+# Furthermore I created SQL queries to find homes that underperformed. Where Homes that sold below total value where considered poor. 
+Whereas homes that sold for over total value, where labeled as excellent. This gives a business a good idea of the homes that are selling for higher than the projections.
+Perhaps homes in these areas in the future will follow the same trend and they now know where extacly to look for when looking for homes that sell above projections.
+
+#Finally, I presented the difference between what is the total value of the home vs the selling price of the home. That difference was +23,000. 
+Meaning the average difference between the selling price and the total value was over $23,000. 
+Therfore, when we want to sell a home, we can expect a markup in the selling price to be above $23,000 the 
+total value of the home. This means now a a business can price better their homes and maximize profit.
