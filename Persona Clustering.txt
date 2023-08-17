@@ -9,10 +9,6 @@ library(caret)
 library(pROC)
 library(tree)
 
-
-##################
-# Customer persona exercise
-##################
 # download kaggle dataset
 # overall site - https://www.kaggle.com/shwetabh123/mall-customers
 
@@ -24,9 +20,6 @@ colnames(mydata)[1:5] <- c("CustomerID", "Gender", "Age", "Annual_Income","Spend
 
 # convert gender into a factor
 mydata$Gender <- as.factor(mydata$Gender)
-
-# how do you determine the number of clusters?
-# https://www.datanovia.com/en/lessons/determining-the-optimal-number-of-clusters-3-must-know-methods/
 
 # this scales the numeric variables
 mydata_scaled <- as.data.frame(scale((mydata)[,c(3:5)]))
@@ -75,7 +68,7 @@ vistab <- as.data.frame(mydata_combined) %>%
          ID=CustomerID)
 
 
-# create a function to claulate the mean value for the visualizations
+# create a function to calculate the mean value for the visualizations
 meanFunction <- function(x){
   return(data.frame(y=round(mean(x),1),
                     label=round(mean(x,na.rm=T),1)))
@@ -124,8 +117,6 @@ ggplot(vistab, aes(Spending_Score))+
   facet_wrap(~cluster, ncol=1)+
   labs(x="Spending Score",y ="Count per cluster")
 
-
-
 # colors visualization of individual observations by number
 ggplot(vistab, aes(Age, Spending_Score))+
   geom_text(label=rownames(vistab), color=factor(k4$cluster))
@@ -143,7 +134,6 @@ mydata_combined$cluster4 <- factor(mydata_combined$cluster4,
 str(mydata_combined$cluster4)
 
 # split the data
-# https://www.statology.org/how-to-generate-a-sample-using-the-sample-function-in-r/
 set.seed(365)
 ind <- sample(mydata_combined$CustomerID,150, replace = FALSE, prob = NULL)
 train <- mydata_combined[ind,]
@@ -177,7 +167,7 @@ confusionMatrix(p2, train$cluster4, positive = "Yes")
 p3 <- predict(dtree_model2, test, type = "class")
 confusionMatrix(p3, test$cluster4, positive="Yes")
 
-# now apply this to new people entering the database
+#Applied this to new people entering the database
 CustomerID <- c(201,202,203)
 Age <- c(54,39, 21)
 Annual_Income <- c(45, 82, 66)
