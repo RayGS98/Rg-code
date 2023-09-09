@@ -82,3 +82,6 @@ loughran_word_counts %>%
   geom_col(show.legend = FALSE)+
   facet_wrap(~sentiment, scales = "free_y")+
   labs(x = "Contribution to sentiment", y = "Important Words")
+
+
+Visualizations:file:///C:/Users/cg051/Downloads/annotated-Mar20asg4%2520rg.pptx%20(1).pdf
