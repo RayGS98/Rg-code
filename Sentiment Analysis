@@ -132,9 +132,6 @@ ggplot(Comment_table, aes(bing_score))+
   geom_histogram(bins=20, color="white")+
   labs(x="Bing Sentiment Score", y="Count of Comments per Bin")
 
-# More visualizations from the Text Mining with R book
-# https://www.tidytextmining.com/sentiment.html
-
 bing_word_counts <- tidy_orig %>%
   inner_join(bing_sent) %>%
   count(word, sentiment, sort=TRUE)
