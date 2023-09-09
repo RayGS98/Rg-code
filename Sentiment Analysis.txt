@@ -1,4 +1,5 @@
-
+#######
+This R code performs sentiment analysis on a text dataset (Goya Foods) using the Loughran sentiment lexicon and creates various visualizations to analyze the sentiment distribution in the text data#######
 
 library(rvest)
 library(utf8)
