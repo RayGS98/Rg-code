@@ -68,3 +68,5 @@ ggplot(ggtable3, aes(NPSdata$`Date of Survey`, NPS_score))+
   geom_point()+
   geom_line(aes(color="red"))+ 
   labs(x="Date of Response", y="NPS Score")
+
+Presentation:file:///C:/Users/cg051/Downloads/annotated-MAR%25206669%2520Assignment%25205.pptx.pdf
