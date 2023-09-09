@@ -1,0 +1,169 @@
+# open package libraries
+library(openxlsx)
+library(tidyverse)
+library(tidytext)
+library(textdata)
+
+mydata <- read.xlsx("comments_export2-goya-foods-trumpGroup1.xlsx")
+
+# here are the sentiment analysis lexicons in tidytext
+nrc_sent <- data_frame(get_sentiments("nrc"))
+bing_sent <- data_frame(get_sentiments("bing"))
+loughran_sent <- data_frame(get_sentiments("loughran"))
+afinn_sent <- data_frame(get_sentiments("afinn"))
+
+nrc_sent2 <- nrc_sent %>%
+  filter(sentiment=="negative" | sentiment=="positive")
+
+# fix Trump in Bing
+bing_sent[6175,2] <- "negative"
+
+text <- mydata$commentBody
+text_df <- data_frame(text)
+tidy_orig <- text_df # no grouping
+text_df$commentNum <- seq(1:length(text))
+text_df <- text_df %>%
+  group_by(commentNum) %>%
+  unnest_tokens(word, text)
+
+# create my own stop_word list
+mystopwords <- stop_words
+
+# unnest tokens (words for the tidy original data)
+tidy_orig <- tidy_orig %>%
+  unnest_tokens(word,text)
+
+# remove stopwords
+tidy_orig <- tidy_orig %>%
+  anti_join(mystopwords)
+
+# join to see which words will generate a sentiment using NRC positive / negative
+tidy_orig %>%
+  inner_join(nrc_sent2) %>%
+  count(word, sort = TRUE) %>%
+  top_n(20)
+
+
+# visualize that the top 20 words 
+tidy_orig %>%
+  inner_join(nrc_sent2) %>%
+  count(word, sort = TRUE) %>%
+  top_n(20) %>%
+  ggplot(aes(reorder(word,n),n))+
+  geom_bar(stat = "identity")+
+  coord_flip() +
+  labs(x = "Count of Words", y = "Word")
+
+# which words were positive or negative
+newtab <- tidy_orig %>%
+  inner_join(nrc_sent2) %>%
+  count(word, sort = TRUE) %>%
+  top_n(n=20)
+
+# join with the NRC Sentiment List
+newtab <- newtab %>%
+  left_join(nrc_sent2)
+
+ggplot(newtab, aes(reorder(word,n),n, fill=sentiment))+
+  geom_bar(stat = "identity")+
+  coord_flip() +
+  labs(x = "Count of Words", y = "Word")
+
+
+# create scores for each comment
+Comment_table <- mydata$commentBody
+Comment_table <- data_frame(text)
+Comment_table$commentNum <- seq(1:length(text))
+
+# nrc scores
+nrc_result <- text_df %>%
+  anti_join(mystopwords) %>%
+  left_join(nrc_sent2) %>%
+  count(sentiment) %>%
+  spread(sentiment, n, fill=0) %>%
+  mutate(sentiment = positive - negative)
+
+# add the nrc score to the table
+Comment_table$nrc_score <- cbind(nrc_result$sentiment)
+
+# bing scores
+bing_result <- text_df %>%
+  anti_join(mystopwords) %>%
+  left_join(bing_sent) %>%
+  count(sentiment) %>%
+  spread(sentiment, n, fill=0) %>%
+  mutate(sentiment = positive - negative)
+
+# add the nrc score to the table
+Comment_table$bing_score <- cbind(bing_result$sentiment)
+
+# add the afinn sentiment score
+afinn_result <- text_df %>%
+  anti_join(mystopwords) %>%
+  left_join(afinn_sent)
+
+afinn_result$value <- ifelse(is.na(afinn_result$value),0, afinn_result$value)
+
+afinn_result <- afinn_result %>%
+  group_by(commentNum) %>%
+  summarize(sum(value))
+
+# add the nrc score to the table
+Comment_table$afinn_score <- cbind(afinn_result$`sum(value)`)
+
+
+# some visualizations
+ggplot(Comment_table, aes(commentNum, bing_score))+
+  geom_line()+
+  geom_point()+
+  labs(x="Comment Number", y="Bing Sentiment Score of Comment")
+
+ggplot(Comment_table, aes(commentNum, bing_score))+
+  geom_bar(stat = "identity")+
+  labs(x="Comment Number", y="Bing Sentiment Score of Comment")
+
+
+ggplot(Comment_table, aes(bing_score, afinn_score))+
+  geom_point()+
+  labs(x="Bing Sentiment Score of Comment", y="Afinn Sentiment Score of Comment")+
+  labs(title = "Relationship between the Lexicons by Comment")
+
+ggplot(Comment_table, aes(bing_score))+
+  geom_histogram(bins=20, color="white")+
+  labs(x="Bing Sentiment Score", y="Count of Comments per Bin")
+
+# More visualizations from the Text Mining with R book
+# https://www.tidytextmining.com/sentiment.html
+
+bing_word_counts <- tidy_orig %>%
+  inner_join(bing_sent) %>%
+  count(word, sentiment, sort=TRUE)
+
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill=sentiment))+
+  geom_col(show.legend = FALSE)+
+  facet_wrap(~sentiment, scales = "free_y")+
+  labs(x = "Contribution to sentiment", y = "Important Words")
+
+bing_word_counts %>%
+  count(sentiment, word, wt=n)%>%
+  filter(n>=5)%>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill=sentiment)) +
+  geom_bar(stat='identity')+
+  labs(y="Contribution to Sentiment")+
+  coord_flip()
+
+bing_result2 <- bing_result
+names(bing_result2)[4] <- "word_count"
+bing_result2 %>%
+#  mutate(positivity = (positive - negative )/(positive + negative)) %>%
+  mutate(positivity = (positive - negative )/(word_count)) %>%
+  ggplot(aes(commentNum, positivity, fill=positivity >0))+
+  geom_col(show.legend = FALSE)+
+  labs(x="Comment Number", y = "Postivity Score")
