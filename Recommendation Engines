@@ -1,0 +1,155 @@
+# packages / libaries
+library(tidyverse)
+library(lsa)
+library(recommenderlab)
+
+
+# read in the data for user based recommendation
+mydata <- read.csv("RecommendationMatrix.csv")
+
+# explore the ratings
+visual <- as.matrix(mydata[,2:7])
+
+# What are the dimensions of the dataset?
+dim(visual)
+# exploratory data analysis of the dataset
+vector_ratings <- as.vector(visual)
+vector_ratings <- table(vector_ratings)
+vector_ratings <- as.data.frame(vector_ratings)
+# now visualize the ratings
+ggplot(vector_ratings, aes(as.factor(vector_ratings), Freq))+
+  geom_bar(stat="identity")+
+  labs(x="Ratings", y="Count of Ratings")
+
+
+# develop a user matrix from the mydata data frame
+# the t() function transposes the matrix
+UserSimMatrix <- as.matrix(t(mydata[,2:7]))
+# if you want to replace NAs with 0
+# UserSimMatrix[is.na(UserSimMatrix)] <- 0
+
+# now calculate the correlation matrix
+# the use="complete.obs" calculates the correlations without the NAs
+UserCorMatrix <- cor(UserSimMatrix, use = "complete.obs")
+
+# fix the names in the matrix
+namesVec <- mydata[,1]
+rownames(UserCorMatrix) <- namesVec
+colnames(UserCorMatrix) <- namesVec
+
+# now calculate the average rating for each user across all items
+meanVec <- rowMeans(mydata[,2:(ncol(mydata))], na.rm = TRUE)
+print(meanVec)
+
+# add the means to the data frame
+mydata2 <- cbind(mydata, meanVec)
+
+
+# use the recommenderLab package to do analysis and Recommendation
+# recommenderLab is a self-contained package to do end to end recommendations
+# https://cran.r-project.org/web/packages/recommenderlab/readme/README.html
+
+# this package requires data to be in a special format
+
+
+# make the rownames equal to the recommenders (Users)
+rownames(mydata2) <- mydata$Group.Members
+
+# Save this data frame before more manipulations
+mydata3 <- mydata2
+
+# remove the column with the usernames
+mydata3 <- mydata2[,-1]
+
+# some excursions to run later
+# mydata3[1,1] <- NA
+# mydata3[7,2] <- NA
+
+# remove the average ratings column
+mydata3 <- mydata3[,-7]
+
+
+# this package requires data to be in a special format
+# just copy the recommendations as a matrix (all numbers)
+UserSimMatrixRL <- as.matrix(mydata3)
+
+# before transformation it is just an array
+class(UserSimMatrixRL)
+
+# the transformation into the format required to perform ratings
+UserSimMatrixRL <- as(UserSimMatrixRL,"realRatingMatrix")
+
+# after transformation it is a recommenderLab object type
+class(UserSimMatrixRL)
+
+# this statement tells RecommenderLab to use the correlation matrix approach
+# it creates a distance matrix
+similarity_users <- similarity(UserSimMatrixRL, method="pearson")
+# show the similarity
+similarity_users
+
+# this illustrates the number of columns that have completed ratings in 
+# the matrix
+colCounts(UserSimMatrixRL)
+
+# Now we set up the model parameters
+recommenderRegistry$get_entry_names()
+help("recommenderRegistry")
+
+recommender_models <- recommenderRegistry$get_entries(dataType=
+                                                        "realRatingMatrix")
+
+# this command illustrates what parameters were established in the previous step
+recommender_models$UBCF_realRatingMatrix$parameters
+
+# now we run the model
+# recc_model <- Recommender(data=UserSimMatrixRL, method="UBCF")
+# this model type is giving an errant value in 2022... shifting to POPULAR
+
+recc_model <- Recommender(data=UserSimMatrixRL,
+                           method="POPULAR")
+
+# here is the output of the model
+recc_model
+
+# this provides more model details
+model_details <- getModel(recc_model)
+names(model_details)
+
+# now lets use the model that we built to fill out the NAs with predictions
+# based on the user similarities
+
+# this statement sets up the number of max predictions to make
+# we will then apply the model against the NAs in our original dataset
+n_recommended <- 6
+
+# this applies the model we built to the missing values in the dataset
+recc_predicted <- predict(object = recc_model,
+                          newdata = UserSimMatrixRL,
+                          n = n_recommended)
+
+# let's look at the results
+recc_predicted
+getRatings(x=recc_predicted)
+recc_predicted@ratings
+recc_predicted@items
+recc_predicted@itemLabels
+
+# now we are going to do some manipulation to get the prediction out of the
+# weird recommenderLab format 
+
+recc_matrix <- sapply(recc_predicted@items,
+                      function(x){
+  colnames(mydata3)[x]})
+
+NewList <- as.data.frame(simplify(recc_matrix))
+NewList2 <- as.data.frame(simplify(recc_predicted@ratings))
+NewList3 <- cbind(NewList, NewList2)
+colnames(NewList3) <- c("Rest", "Rating")
+
+# This prints the forecasted rank for the missing values
+NewList3
+
+# This converts that forecast into a data frame
+NewList3 <- as.data.frame(NewList3)
+
