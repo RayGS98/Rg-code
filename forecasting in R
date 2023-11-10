@@ -22,3 +22,15 @@ print(forecast_values)
 
 # Plot the forecast
 plot(forecast_values)
+
+
+New example
+
+# Create a time series object
+financial_ts <- ts(your_data, frequency = 12)  # Adjust frequency as needed
+
+# Automatically select an ARIMA model
+arima_model <- auto.arima(financial_ts)
+
+# Generate forecasts
+forecasts <- forecast(arima_model, h = n)  # n is the number of periods to foreca
