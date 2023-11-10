@@ -27,7 +27,7 @@ plot(forecast_values)
 New example
 
 # Create a time series object
-financial_ts <- ts(your_data, frequency = 12)  # Adjust frequency as needed
+financial_ts <- ts(my_data, frequency = 12) # Adjust frequency as needed
 
 # Automatically select an ARIMA model
 arima_model <- auto.arima(financial_ts)
