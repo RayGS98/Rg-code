@@ -2,14 +2,19 @@
 library(forecast)
 
 # Create a sample time series data
+# You can replace this with your own dataset
+# In this example, we'll use the 'AirPassengers' dataset that comes with R
 data("AirPassengers")
 
 # Convert the data to a time series object
 ts_data <- ts(AirPassengers, frequency = 12)
 
+# Determine the index for splitting the data
+split_index <- length(ts_data) - 12  # Assuming you want to use the last 12 months as test data
+
 # Split the data into training and test sets
-train_data <- window(ts_data, start = c(1949, 1), end = c(1959, 12))
-test_data <- window(ts_data, start = c(1960, 1), end = c(1960, 12))
+train_data <- window(ts_data, start = 1, end = split_index)
+test_data <- window(ts_data, start = split_index + 1)
 
 # Fit a forecasting model (e.g., Exponential Smoothing)
 forecast_model <- ets(train_data)
@@ -22,6 +27,7 @@ print(forecast_values)
 
 # Plot the forecast
 plot(forecast_values)
+
 
 
 New example
