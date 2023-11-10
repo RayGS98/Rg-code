@@ -40,3 +40,32 @@ arima_model <- auto.arima(financial_ts)
 
 # Generate forecasts
 forecasts <- forecast(arima_model, h = n)  # n is the number of periods to foreca
+
+
+# New example#
+
+# Load necessary libraries
+library(forecast)
+
+# Load the Johnson & Johnson dataset
+data("JohnsonJohnson")
+
+# Create a time series object
+jj_ts <- ts(JohnsonJohnson, frequency = 4)
+
+# Visualize the time series
+plot(jj_ts, main = "Johnson & Johnson Earnings per Share")
+
+# Fit an ARIMA model
+arima_model <- auto.arima(jj_ts)
+
+# Generate forecasts for the next 8 quarters
+forecast_values <- forecast(arima_model, h = 8)
+
+# Visualize the forecasts
+autoplot(forecast_values) +
+  ylab("Earnings per Share") +
+  ggtitle("Johnson & Johnson Earnings per Share Forecast")
+
+# Access forecasted values programmatically
+forecast_values$mean
