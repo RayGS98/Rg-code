@@ -25,7 +25,34 @@ count2 <- 19
 sample1N <- 1000
 sample2N <- 1000
 
+#Two Proportions Z test
+res <- prop.test(x = c(490, 400), n = c(500, 500))
+# Printing the results
+res
 
-# this tests that the first group is less than the 2nd group
-prop.test(c(count1, count2), c(sample1N, sample2N), correct = FALSE,
-          alternative = "less")
+#Test whether the observed proportion of smokers in group A is less than the observed proportion of smokers in group B
+prop.test(x = c(490, 400), n = c(500, 500),
+           alternative = "less")
+
+#Now test whether the observed proportion of smokers in group A is greater than the observed proportion of smokers in group B
+
+prop.test(x = c(490, 400), n = c(500, 500),
+              alternative = "greater")
+
+#Finding required sample size:
+
+>power.t.test(delta=.25,sd=0.7,power=.80)
+
+#Finding power:
+
+> power.t.test(n=50,delta=.25,sd=0.7)
+
+#Comparing Proportions betweens Groups
+
+> power.prop.test(n=100,p1=.2,p2=.1)
+
+Finding necessary sample size:
+
+> power.prop.test(p1=.2,p2=.1,power=.8)
+
+
