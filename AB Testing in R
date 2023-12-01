@@ -1,0 +1,31 @@
+# library set up
+library(tidyverse)
+library(factoextra)
+install.packages("factoextra")
+p1 <- 0.02  # set this equal to the expected proportion in sample1
+p2 <- 0.04  # set this equal to the expected proportion in sample2
+desiredPower <- 0.8 # set this equal to the desired power
+
+power.prop.test(p1 = p1,p2 = p2,power = desiredPower)
+
+# now let's test the outcomes and determine if statistically significant
+
+count1 <- 11
+count2 <- 40
+sample1N <- 1000
+sample2N <- 1000
+
+# two-tailed test ... are they different?
+prop.test(c(count1, count2), c(sample1N, sample2N), correct = FALSE)
+
+# one tailed test ... is one GT or LT the other
+
+count1 <- 10
+count2 <- 19
+sample1N <- 1000
+sample2N <- 1000
+
+
+# this tests that the first group is less than the 2nd group
+prop.test(c(count1, count2), c(sample1N, sample2N), correct = FALSE,
+          alternative = "less")
